@@ -185,7 +185,15 @@
     if (!hero || !window.gsap || !window.ScrollTrigger) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     gsap.registerPlugin(ScrollTrigger);
-    var tl = gsap.timeline({ scrollTrigger: { trigger: hero, start: "top top", end: "bottom bottom", scrub: 0.8 } });
+    ScrollTrigger.config({ ignoreMobileResize: true });
+    var touch = window.matchMedia("(pointer: coarse)").matches;
+    var st;
+    window.addEventListener("scroll", function () {
+      hero.classList.add("is-scrolling");
+      clearTimeout(st);
+      st = setTimeout(function () { hero.classList.remove("is-scrolling"); }, 160);
+    }, { passive: true });
+    var tl = gsap.timeline({ scrollTrigger: { trigger: hero, start: "top top", end: "bottom bottom", scrub: touch ? true : 0.35 } });
     tl.from(".photo-layer", { scale: 0.82, yPercent: 10, duration: 1, ease: "power2.out" }, 0)
       .from(".hero-title", { scale: 0.78, duration: 1.2, ease: "power2.out" }, 0)
       .from(".fi.L", { xPercent: -280, opacity: 0, stagger: 0.12, duration: 1, ease: "power3.out" }, 0.2)

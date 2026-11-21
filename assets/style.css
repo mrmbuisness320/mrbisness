@@ -275,3 +275,17 @@ select.field option{background:#0b0716}
   .reveal{opacity:1;transform:none}
   html{scroll-behavior:auto}
 }
+
+/* ---------- performance (smoother scrolling on phones) ---------- */
+.hero-glow{filter:none}
+.hero-photo{-webkit-mask-image:none;mask-image:none}
+.hero-pin::after{content:"";position:absolute;left:0;right:0;bottom:0;height:24vh;z-index:2;pointer-events:none;background:linear-gradient(rgba(5,3,11,0),var(--bg) 88%)}
+.glass{-webkit-backdrop-filter:none;backdrop-filter:none;background:linear-gradient(145deg,rgba(62,42,112,.74),rgba(26,16,56,.74));box-shadow:0 8px 24px -12px rgba(139,92,246,.6)}
+.header{-webkit-backdrop-filter:none;backdrop-filter:none;background:linear-gradient(rgba(5,3,11,.92),rgba(5,3,11,0))}
+.hero-title{text-shadow:0 0 50px rgba(139,92,246,.55)}
+.photo-layer,.hero-title,.fi{will-change:transform}
+.is-scrolling .fl{animation-play-state:paused}
+@media(max-width:820px){
+  body::after{display:none}
+  .fl{animation:none}
+}
