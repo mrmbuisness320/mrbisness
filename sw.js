@@ -1,6 +1,6 @@
 /* MRM service worker: makes the site installable and usable offline.
    Bump CACHE when you change files so visitors get the new version. */
-var CACHE = "mrm-v2";
+var CACHE = "mrm-v3";
 var CORE = [
   "./", "index.html", "video-editing.html", "development.html", "apps.html", "about.html",
   "terms.html", "privacy.html", "login.html", "admin.html", "config.js",
