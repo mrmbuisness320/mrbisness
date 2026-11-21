@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Login — MRM</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#05030b">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MRM">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="login" data-nofooter>
+<main class="auth-wrap">
+  <div class="panel">
+    <img class="logo-big" src="assets/logo.svg" alt="MRM">
+    <h1 id="authTitle">Welcome back</h1>
+    <p class="sub" id="authSub">Sign in to download apps.</p>
+    <div class="seg" id="authTabs">
+      <button class="tab active" type="button" data-mode="signin">Sign in</button>
+      <button class="tab" type="button" data-mode="signup">Create account</button>
+    </div>
+    <form id="loginForm" autocomplete="on">
+      <label for="email">Email</label>
+      <input class="field" id="email" name="email" type="email" required autocomplete="username" placeholder="you@example.com">
+      <label for="password">Password</label>
+      <input class="field" id="password" name="password" type="password" required minlength="6" autocomplete="current-password" placeholder="••••••••">
+      <div id="confirmWrap" hidden>
+        <label for="confirm">Confirm password</label>
+        <input class="field" id="confirm" name="confirm" type="password" autocomplete="new-password" placeholder="Repeat password">
+      </div>
+      <button class="btn btn-primary" type="submit">Sign in</button>
+    </form>
+    <form id="verifyForm" hidden autocomplete="off">
+      <label for="code">Verification code</label>
+      <input class="field code-field" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="••••••" required>
+      <button class="btn btn-primary" type="submit">Verify &amp; continue</button>
+      <div class="link-row">
+        <button class="linkbtn" type="button" id="resendBtn">Resend code</button>
+        <button class="linkbtn" type="button" id="backBtn">Use a different email</button>
+      </div>
+    </form>
+    <div class="msg" id="loginMsg" role="alert"></div>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

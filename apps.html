@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Apps — MRM</title>
+  <meta name="description" content="Download apps published by MRM, free.">
+  <meta name="theme-color" content="#05030b">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MRM">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="apps">
+<main>
+  <section class="page-hero">
+    <div class="container">
+      <p class="eyebrow">Free downloads</p>
+      <h1>Published <span class="grad-text">Apps</span></h1>
+      <p class="lead">Every app here is free. Browse them all, then log in with a verified email to download the APK to your Android phone.</p>
+      <div class="note" id="loginNote" hidden><span>Downloads need a free account. <a href="login.html?mode=signup&amp;next=apps.html">Create one</a> in a minute with an email code, or <a href="login.html?next=apps.html">sign in</a>.</span></div>
+      <input class="search" id="appSearch" type="search" placeholder="Search apps…" aria-label="Search apps">
+    </div>
+  </section>
+  <section class="section" style="padding-top:0">
+    <div class="container">
+      <div class="apps-grid" id="appsGrid"></div>
+      <div class="empty" id="appsEmpty" hidden>No apps match your search.</div>
+      <p class="hint" style="margin-top:26px">Tip: if Android blocks the install, allow "Install unknown apps" for your browser in Settings, then open the downloaded file.</p>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

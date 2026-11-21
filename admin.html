@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin — MRM</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#05030b">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MRM">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="admin" data-nofooter>
+<main class="admin container">
+  <div id="gate"><div class="empty">Checking your session…</div></div>
+
+  <div id="adminUI" hidden>
+    <div class="admin-top">
+      <div>
+        <p class="eyebrow">Developer console</p>
+        <h1 class="h2" style="margin:0">Admin <span class="grad-text">Panel</span></h1>
+        <p class="hint" id="who"></p>
+      </div>
+      <div class="btn-row" style="margin:0">
+        <a class="btn" href="index.html">View site</a>
+        <button class="btn" id="logout" type="button">Log out</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="apps" type="button">Apps</button>
+      <button class="tab" data-tab="settings" type="button">Site settings</button>
+    </div>
+
+    <section id="tab-apps">
+      <div class="box">
+        <h3 id="formTitle">Add a new app</h3>
+        <p class="hint">Upload an icon and an APK file, or paste an external APK link for large files. APK files are stored privately: only logged-in visitors can download them.</p>
+        <form id="appForm">
+          <input type="hidden" name="appid">
+          <div class="two">
+            <div><label for="appname">App name</label><input class="field" id="appname" name="appname" required></div>
+            <div><label for="version">Version</label><input class="field" id="version" name="version" placeholder="1.0.0"></div>
+          </div>
+          <label for="description">Description</label>
+          <textarea class="field" id="description" name="description" placeholder="What does the app do?"></textarea>
+          <div class="two">
+            <div><label for="icon">Icon image</label><input class="field" id="icon" name="icon" type="file" accept="image/*"></div>
+            <div><label for="apk">APK file</label><input class="field" id="apk" name="apk" type="file" accept=".apk,application/vnd.android.package-archive"></div>
+          </div>
+          <p class="hint" id="apkCurrent"></p>
+          <label for="apkurl">…or external APK link (optional)</label>
+          <input class="field" id="apkurl" name="apkurl" type="url" placeholder="https://…">
+          <div class="btn-row">
+            <button class="btn btn-primary" type="submit">Save app</button>
+            <button class="btn" type="button" id="cancelEdit" hidden>Cancel edit</button>
+          </div>
+          <div class="msg" id="appMsg" role="status"></div>
+        </form>
+      </div>
+      <div class="box">
+        <h3>Published apps</h3>
+        <div id="adminApps"><p class="hint">Loading…</p></div>
+      </div>
+    </section>
+
+    <section id="tab-settings" hidden>
+      <div class="box">
+        <h3>Site settings</h3>
+        <p class="hint">Edit contact links, numbers and text shown on the website.</p>
+        <div id="settingsFields"></div>
+        <div class="btn-row"><button class="btn btn-primary" id="saveSettings" type="button">Save settings</button></div>
+        <div class="msg" id="settingsMsg" role="status"></div>
+      </div>
+    </section>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
