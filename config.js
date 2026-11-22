@@ -9,8 +9,8 @@
   from the Admin panel (Admin -> Site Settings), which saves them to Supabase.
 */
 window.MRM_CONFIG = {
-  supabaseUrl: "YOUR_SUPABASE_URL",
-  supabaseAnonKey: "YOUR_SUPABASE_ANON_KEY",
+  supabaseUrl: "https://zikgjqfaffpweabuunaf.supabase.co",
+  supabaseAnonKey: "sb_publishable_2TW7Cn-QCeC27Phw_sk9eQ_Xp3zVNHJ",
   storageBucket: "app-files",   // public bucket: app icons
   apkBucket: "app-apks",        // PRIVATE bucket: APK files (login required to download)
 
