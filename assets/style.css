@@ -476,3 +476,16 @@ select.field option{background:#0b0716}
 .dash-body .side,.dash-body .side-scrim{display:none}
 .side-in>*{flex-shrink:0}
 .auth-wrap{overflow-x:clip}
+
+/* email confirmed page + check-email screen */
+.v-card{position:relative;z-index:1;width:min(440px,92vw);margin:auto;text-align:center;padding:42px 28px;border-radius:32px;background:linear-gradient(150deg,rgba(62,42,112,.55),rgba(20,12,44,.7));border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 80px -30px rgba(139,92,246,.7);animation:vPop .7s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes vPop{from{opacity:0;transform:translateY(18px) scale(.94)}}
+.v-card h1{font-family:var(--head);font-size:1.7rem;margin:16px 0 8px}
+.v-card p{color:var(--soft);margin:0 0 22px}
+.v-ic{width:84px;height:84px;margin:0 auto;border-radius:50%;display:grid;place-items:center;font-size:2.4rem;font-weight:700}
+.v-ic svg{width:42px;height:42px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:30;stroke-dashoffset:30;animation:vDraw .6s .35s ease forwards}
+@keyframes vDraw{to{stroke-dashoffset:0}}
+.v-ic.ok{background:rgba(52,211,153,.16);color:#34d399;box-shadow:0 0 0 10px rgba(52,211,153,.07),0 0 40px rgba(52,211,153,.35)}
+.v-ic.bad{background:rgba(248,113,113,.16);color:#f87171}
+.mail-ic{width:64px;height:64px;margin:0 auto 6px;border-radius:50%;display:grid;place-items:center;background:rgba(139,92,246,.2);color:#d8b4fe}
+.mail-ic svg{width:30px;height:30px}

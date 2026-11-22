@@ -46,6 +46,7 @@
     grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
     chart: '<path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/>',
     ext: '<path d="M7 17 17 7M8 7h9v9"/>',
+    check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
     upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',
     image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>',
@@ -511,6 +512,7 @@
     var disc = $("#disc"), lform = $("#loginForm"), sform = $("#signupForm"), vform = $("#verifyForm"), msg = $("#loginMsg");
     var sw = $("#authSwitch"), backTitle = $("#backTitle"), backSub = $("#backSub");
     var pendingEmail = "", cooldown = null;
+    function verifiedUrl() { return new URL("verified.html", location.href).href; }
     function show(t, ok) { msg.textContent = t; msg.className = "msg auth-msg " + (ok ? "ok" : "err"); }
     function clear() { msg.className = "msg auth-msg"; msg.textContent = ""; }
 
@@ -541,7 +543,7 @@
       if (side === "signin") sw.innerHTML = 'New here? <button type="button" data-go="signup">Create account</button>';
       else if (side === "signup") sw.innerHTML = 'Already have an account? <button type="button" data-go="signin">Sign in</button>';
       else sw.innerHTML = "";
-      if (side === "signup") { sform.hidden = false; vform.hidden = true; backTitle.textContent = "Sign Up"; backSub.textContent = "We will email you a 6-digit code to verify."; }
+      if (side === "signup") { sform.hidden = false; vform.hidden = true; backTitle.textContent = "Sign Up"; backSub.textContent = "We will email you a link to confirm your address."; }
     }
     sw.addEventListener("click", function (e) { var b = e.target.closest("[data-go]"); if (b) setSide(b.dataset.go); });
 
@@ -549,20 +551,19 @@
       var b = $("#resendBtn"), n = 45;
       b.disabled = true; clearInterval(cooldown);
       cooldown = setInterval(function () {
-        n--; b.textContent = n > 0 ? "Resend code (" + n + "s)" : "Resend code";
+        n--; b.textContent = n > 0 ? "Resend link (" + n + "s)" : "Resend link";
         if (n <= 0) { clearInterval(cooldown); b.disabled = false; }
       }, 1000);
-      b.textContent = "Resend code (" + n + "s)";
+      b.textContent = "Resend link (" + n + "s)";
     }
     function showVerify(email) {
       pendingEmail = email;
       setSide("verify");
       sform.hidden = true; vform.hidden = false;
-      backTitle.textContent = "Verify email";
-      backSub.textContent = "Enter the code sent to " + email + ". Check spam too.";
-      vform.code.value = "";
+      backTitle.textContent = "Check your email";
+      backSub.textContent = "";
+      $("#verifyNote").textContent = "We sent a confirmation link to " + email + ". Tap it, then come back and sign in. Check spam too.";
       startCooldown();
-      setTimeout(function () { try { vform.code.focus({ preventScroll: true }); } catch (e) { vform.code.focus(); } }, 700);
     }
 
     getSession().then(function (s) { if (s) goAfter(); });
@@ -576,7 +577,7 @@
         btn.disabled = false;
         if (r.error) {
           if (r.error.code === "email_not_confirmed" || /not confirmed/i.test(r.error.message)) {
-            sb.auth.resend({ type: "signup", email: email }).then(function () { showVerify(email); });
+            sb.auth.resend({ type: "signup", email: email, options: { emailRedirectTo: verifiedUrl() } }).then(function () { showVerify(email); });
             return;
           }
           show("Login failed: " + r.error.message, false); return;
@@ -593,7 +594,7 @@
       if (pw.length < 8) { show("Password must be at least 8 characters.", false); return; }
       if (pw !== sform.confirm.value) { show("Passwords do not match.", false); return; }
       btn.disabled = true;
-      sb.auth.signUp({ email: email, password: pw }).then(function (r) {
+      sb.auth.signUp({ email: email, password: pw, options: { emailRedirectTo: verifiedUrl() } }).then(function (r) {
         btn.disabled = false;
         if (r.error) { show(r.error.message, false); return; }
         if (r.data && r.data.session) { goAfter(); return; }
@@ -606,26 +607,35 @@
 
     vform.addEventListener("submit", function (e) {
       e.preventDefault();
-      var btn = vform.querySelector("button[type=submit]");
-      var code = vform.code.value.replace(/\s/g, "");
-      if (!/^\d{6,8}$/.test(code)) { show("Enter the numeric code from the email.", false); return; }
-      btn.disabled = true; clear();
-      sb.auth.verifyOtp({ email: pendingEmail, token: code, type: "signup" }).then(function (r) {
-        btn.disabled = false;
-        if (r.error) { show("That code is wrong or has expired. Request a new one.", false); return; }
-        show("Email verified. Opening your account…", true);
-        goAfter();
-      });
+      setSide("signin"); lform.email.value = pendingEmail; lform.password.focus({ preventScroll: true });
+      show("Once you have tapped the link in the email, sign in here.", true);
     });
     $("#resendBtn").addEventListener("click", function () {
       clear();
-      sb.auth.resend({ type: "signup", email: pendingEmail }).then(function (r) {
+      sb.auth.resend({ type: "signup", email: pendingEmail, options: { emailRedirectTo: verifiedUrl() } }).then(function (r) {
         if (r.error) { show(r.error.message, false); return; }
-        show("A new code has been sent.", true); startCooldown();
+        show("A new link has been sent.", true); startCooldown();
       });
     });
     $("#backBtn").addEventListener("click", function () { clearInterval(cooldown); setSide("signup"); });
     setSide(new URLSearchParams(location.search).get("mode") === "signup" ? "signup" : "signin");
+  }
+
+  /* ---------- email confirmed page ---------- */
+  function initVerified() {
+    var box = $("#vBox");
+    var h = new URLSearchParams((location.hash || "").replace(/^#/, "")), q = new URLSearchParams(location.search);
+    var err = h.get("error_description") || q.get("error_description");
+    function ok() {
+      box.innerHTML = '<div class="v-ic ok">' + ico("check") + '</div><h1>Email verified</h1><p>Your account is ready. You can now download apps and leave reviews.</p>' +
+        '<div class="btn-row" style="justify-content:center"><a class="btn btn-primary" href="apps.html">Browse apps</a><a class="btn btn-primary btn-blue" href="index.html">Go home</a></div>';
+    }
+    if (err) {
+      box.innerHTML = '<div class="v-ic bad">!</div><h1>Link expired</h1><p>' + esc(err.replace(/\+/g, " ")) + '</p><div class="btn-row" style="justify-content:center"><a class="btn btn-primary" href="login.html">Back to login</a></div>';
+      return;
+    }
+    ok();
+    if (sb) getSession().then(function (s) { if (s) { try { history.replaceState(null, "", location.pathname); } catch (e) {} } });
   }
 
   /* ---------- shared with admin.js / portfolio.js ---------- */
@@ -646,6 +656,7 @@
   if (page !== "admin") initPresence();
   if (page === "home") initHero();
   if (page === "edit" || page === "dev") getSettings().then(function (s) { renderContacts(page, s); });
+  if (page === "verified") initVerified();
   if (page === "about") getSettings().then(initAbout);
   initSession();
   if (page === "apps") initApps();
