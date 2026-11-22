@@ -17,35 +17,54 @@
 </head>
 <body data-page="login" data-nofooter>
 <main class="auth-wrap">
-  <div class="panel">
-    <img class="logo-big" src="assets/logo.svg" alt="MRM">
-    <h1 id="authTitle">Welcome back</h1>
-    <p class="sub" id="authSub">Sign in to download apps.</p>
-    <div class="seg" id="authTabs">
-      <button class="tab active" type="button" data-mode="signin">Sign in</button>
-      <button class="tab" type="button" data-mode="signup">Create account</button>
+  <i class="auth-orb a"></i><i class="auth-orb b"></i>
+  <div class="auth-stage">
+    <div class="auth-rail" id="authRail" aria-label="Social links"></div>
+    <div class="auth-col">
+      <div class="disc-scene">
+        <div class="disc" id="disc">
+          <div class="face front">
+            <div class="face-in">
+              <h1>Login</h1>
+              <p class="sub">Sign in to download apps and leave reviews.</p>
+              <form id="loginForm" autocomplete="on">
+                <label for="email">Email</label>
+                <input class="field" id="email" name="email" type="email" required autocomplete="username" placeholder="you@example.com">
+                <label for="password">Password</label>
+                <input class="field" id="password" name="password" type="password" required minlength="6" autocomplete="current-password" placeholder="••••••••">
+                <button class="btn btn-primary block" type="submit">Sign in</button>
+              </form>
+            </div>
+          </div>
+          <div class="face back">
+            <div class="face-in">
+              <h1 id="backTitle">Sign Up</h1>
+              <p class="sub" id="backSub">We will email you a 6-digit code to verify.</p>
+              <form id="signupForm" autocomplete="on">
+                <label for="semail">Email</label>
+                <input class="field" id="semail" name="email" type="email" required autocomplete="username" placeholder="you@example.com">
+                <label for="spassword">Password</label>
+                <input class="field" id="spassword" name="password" type="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters">
+                <label for="sconfirm">Confirm password</label>
+                <input class="field" id="sconfirm" name="confirm" type="password" required autocomplete="new-password" placeholder="Repeat password">
+                <button class="btn btn-primary block" type="submit">Create account</button>
+              </form>
+              <form id="verifyForm" hidden autocomplete="off">
+                <label for="code">Verification code</label>
+                <input class="field code-field" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="••••••" required>
+                <button class="btn btn-primary block" type="submit">Verify</button>
+                <div class="link-row">
+                  <button class="linkbtn" type="button" id="resendBtn">Resend code</button>
+                  <button class="linkbtn" type="button" id="backBtn">Change email</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="auth-switch" id="authSwitch"></p>
+      <div class="msg auth-msg" id="loginMsg" role="alert"></div>
     </div>
-    <form id="loginForm" autocomplete="on">
-      <label for="email">Email</label>
-      <input class="field" id="email" name="email" type="email" required autocomplete="username" placeholder="you@example.com">
-      <label for="password">Password</label>
-      <input class="field" id="password" name="password" type="password" required minlength="6" autocomplete="current-password" placeholder="••••••••">
-      <div id="confirmWrap" hidden>
-        <label for="confirm">Confirm password</label>
-        <input class="field" id="confirm" name="confirm" type="password" autocomplete="new-password" placeholder="Repeat password">
-      </div>
-      <button class="btn btn-primary" type="submit">Sign in</button>
-    </form>
-    <form id="verifyForm" hidden autocomplete="off">
-      <label for="code">Verification code</label>
-      <input class="field code-field" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="••••••" required>
-      <button class="btn btn-primary" type="submit">Verify &amp; continue</button>
-      <div class="link-row">
-        <button class="linkbtn" type="button" id="resendBtn">Resend code</button>
-        <button class="linkbtn" type="button" id="backBtn">Use a different email</button>
-      </div>
-    </form>
-    <div class="msg" id="loginMsg" role="alert"></div>
   </div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

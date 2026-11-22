@@ -9,8 +9,8 @@
   from the Admin panel (Admin -> Site Settings), which saves them to Supabase.
 */
 window.MRM_CONFIG = {
-  supabaseUrl: "https://zikgjqfaffpweabuunaf.supabase.co",
-  supabaseAnonKey: "sb_publishable_2TW7Cn-QCeC27Phw_sk9eQ_Xp3zVNHJ",
+  supabaseUrl: "YOUR_SUPABASE_URL",
+  supabaseAnonKey: "YOUR_SUPABASE_ANON_KEY",
   storageBucket: "app-files",   // public bucket: app icons
   apkBucket: "app-apks",        // PRIVATE bucket: APK files (login required to download)
 
@@ -31,6 +31,18 @@ window.MRM_CONFIG = {
     dev_facebook: "https://www.facebook.com/share/1dSM5TxSf1/",
     dev_telegram: "https://t.me/mrappdevolopment",
     dev_website: "",
+
+    // Portfolio pages (editable later in Admin -> Settings)
+    owner_name: "MRM",
+    portfolio_experience: "",   // e.g. "2" shows a "2 years experience" badge; empty hides it
+    dev_summary: "I build modern Android apps and websites with clean design, fast performance and easy-to-manage dashboards.",
+    dev_skills: "Android Apps, Websites, UI Design, Admin Dashboards, Supabase",
+    video_summary: "I edit short-form and long-form videos that hold attention, and I publish ready-to-use CapCut templates.",
+    video_skills: "Short-form edits, CapCut Templates, Motion graphics, Color grading, Sound sync",
+
+    // Free-plan limits used by the admin storage meters (change if your Supabase plan changes)
+    limit_storage_mb: "1024",
+    limit_db_mb: "500",
 
     // Text
     tagline: "Apps, websites and video edits that stand out.",

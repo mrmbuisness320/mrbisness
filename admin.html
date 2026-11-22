@@ -15,73 +15,191 @@
   <meta name="apple-mobile-web-app-title" content="MRM">
   <link rel="stylesheet" href="assets/style.css">
 </head>
-<body data-page="admin" data-nofooter>
-<main class="admin container">
-  <div id="gate"><div class="empty">Checking your session…</div></div>
+<body class="dash-body" data-page="admin" data-nofooter>
+<div class="dash-bg"><i></i><i></i><i></i></div>
 
-  <div id="adminUI" hidden>
-    <div class="admin-top">
+<div id="gate" class="container" style="padding-top:120px"><div class="empty">Checking your session…</div></div>
+
+<div class="dash" id="adminUI" hidden>
+  <nav class="rail gl" id="rail" aria-label="Admin sections">
+    <div class="logo-sm" id="railLogo"></div>
+    <button type="button" class="active" data-tab="overview" data-ico="grid">Overview</button>
+    <button type="button" data-tab="apps" data-ico="phoneapp">Apps</button>
+    <button type="button" data-tab="portfolio" data-ico="image">Portfolio</button>
+    <button type="button" data-tab="reviews" data-ico="star">Reviews</button>
+    <button type="button" data-tab="feedback" data-ico="chat">Feedback</button>
+    <span class="sp"></span>
+    <button type="button" data-tab="settings" data-ico="gear">Settings</button>
+  </nav>
+
+  <main class="dash-main">
+    <div class="dash-top">
       <div>
-        <p class="eyebrow">Developer console</p>
-        <h1 class="h2" style="margin:0">Admin <span class="grad-text">Panel</span></h1>
-        <p class="hint" id="who"></p>
+        <h1 id="greet">Welcome back</h1>
+        <p class="who" id="who"></p>
       </div>
-      <div class="btn-row" style="margin:0">
-        <a class="btn" href="index.html">View site</a>
-        <button class="btn" id="logout" type="button">Log out</button>
+      <div class="acts">
+        <a class="tab" href="index.html">View site</a>
+        <button class="tab" id="logout" type="button">Log out</button>
       </div>
     </div>
 
-    <div class="tabs">
-      <button class="tab active" data-tab="apps" type="button">Apps</button>
-      <button class="tab" data-tab="settings" type="button">Site settings</button>
-    </div>
+    <!-- OVERVIEW -->
+    <section id="tab-overview">
+      <div class="grid12">
+        <div class="gl pad s4">
+          <h3><span class="live-dot"></span>Live now</h3>
+          <p class="cap">Visitors on the website right now</p>
+          <div class="live-big" id="liveNum">0</div>
+          <div id="liveByPage" style="margin-top:14px"></div>
+        </div>
+        <div class="gl pad s8">
+          <h3>Storage &amp; database</h3>
+          <p class="cap" id="meterCap">Free-plan limits can be changed in Settings.</p>
+          <div class="gauges">
+            <div class="gauge" id="gaugeFiles"></div>
+            <div class="gauge" id="gaugeDb"></div>
+            <div style="min-width:170px;flex:1">
+              <div class="kv"><span>APK files</span><span id="kvApk">–</span></div>
+              <div class="kv"><span>App icons &amp; images</span><span id="kvIcons">–</span></div>
+              <div class="kv"><span>Database</span><span id="kvDb">–</span></div>
+              <div class="kv"><span>Max single file</span><span>50 MB (free plan)</span></div>
+            </div>
+          </div>
+        </div>
 
-    <section id="tab-apps">
-      <div class="box">
-        <h3 id="formTitle">Add a new app</h3>
-        <p class="hint">Upload an icon and an APK file, or paste an external APK link for large files. APK files are stored privately: only logged-in visitors can download them.</p>
-        <form id="appForm">
-          <input type="hidden" name="appid">
-          <div class="two">
-            <div><label for="appname">App name</label><input class="field" id="appname" name="appname" required></div>
-            <div><label for="version">Version</label><input class="field" id="version" name="version" placeholder="1.0.0"></div>
-          </div>
-          <label for="description">Description</label>
-          <textarea class="field" id="description" name="description" placeholder="What does the app do?"></textarea>
-          <div class="two">
-            <div><label for="icon">Icon image</label><input class="field" id="icon" name="icon" type="file" accept="image/*"></div>
-            <div><label for="apk">APK file</label><input class="field" id="apk" name="apk" type="file"></div>
-          </div>
-          <p class="hint" id="apkCurrent"></p>
-          <label for="apkurl">…or external APK link (optional)</label>
-          <input class="field" id="apkurl" name="apkurl" type="url" placeholder="https://…">
-          <div class="btn-row">
-            <button class="btn btn-primary" type="submit">Save app</button>
-            <button class="btn" type="button" id="cancelEdit" hidden>Cancel edit</button>
-          </div>
-          <div class="msg" id="appMsg" role="status"></div>
-        </form>
+        <div class="gl pad s3 tile"><div class="ic" data-i="phoneapp"></div><div class="num" id="tApps">–</div><div class="lbl">Published apps</div></div>
+        <div class="gl pad s3 tile"><div class="ic" data-i="users"></div><div class="num" id="tUsers">–</div><div class="lbl">Accounts</div></div>
+        <div class="gl pad s3 tile"><div class="ic" data-i="star"></div><div class="num" id="tRatings">–</div><div class="lbl">App ratings</div></div>
+        <div class="gl pad s3 tile"><div class="ic" data-i="chat"></div><div class="num" id="tFeedback">–</div><div class="lbl">Feedback messages</div></div>
+
+        <div class="gl pad s4">
+          <h3>Viewing apps</h3>
+          <p class="cap">Who has an app page open</p>
+          <div id="liveApps"><p class="hint">Nobody right now.</p></div>
+        </div>
+        <div class="gl pad s4">
+          <h3>Rating spread</h3>
+          <p class="cap" id="ratingCap">All apps</p>
+          <div class="bars" id="ratingBars"></div>
+        </div>
+        <div class="gl pad s4">
+          <h3>Latest feedback</h3>
+          <p class="cap">Newest messages</p>
+          <div id="latestFeedback"><p class="hint">None yet.</p></div>
+        </div>
       </div>
-      <div class="box">
-        <h3>Published apps</h3>
-        <div id="adminApps"><p class="hint">Loading…</p></div>
+      <div class="msg" id="statsMsg" role="status"></div>
+    </section>
+
+    <!-- APPS -->
+    <section id="tab-apps" hidden>
+      <div class="grid12">
+        <div class="gl pad s5">
+          <h3 id="formTitle">Add a new app</h3>
+          <p class="cap">Upload an icon and an APK (stored privately: only logged-in visitors can download), or paste an external link.</p>
+          <form id="appForm">
+            <input type="hidden" name="appid">
+            <div class="two">
+              <div><label for="appname">App name</label><input class="field" id="appname" name="appname" required></div>
+              <div><label for="version">Version</label><input class="field" id="version" name="version" placeholder="1.0.0"></div>
+            </div>
+            <label for="description">Description</label>
+            <textarea class="field" id="description" name="description" placeholder="What does the app do?"></textarea>
+            <div class="two">
+              <div><label for="icon">Icon image</label><input class="field" id="icon" name="icon" type="file" accept="image/*"></div>
+              <div><label for="apk">APK file</label><input class="field" id="apk" name="apk" type="file"></div>
+            </div>
+            <p class="hint" id="apkCurrent"></p>
+            <label for="apkurl">…or external APK link (optional)</label>
+            <input class="field" id="apkurl" name="apkurl" type="url" placeholder="https://…">
+            <div class="btn-row">
+              <button class="btn btn-primary" type="submit">Save app</button>
+              <button class="tab" type="button" id="cancelEdit" hidden>Cancel edit</button>
+            </div>
+            <div class="msg" id="appMsg" role="status"></div>
+          </form>
+        </div>
+        <div class="gl pad s7">
+          <h3>Published apps</h3>
+          <p class="cap">Edit or remove apps</p>
+          <div id="adminApps"><p class="hint">Loading…</p></div>
+        </div>
       </div>
     </section>
 
+    <!-- PORTFOLIO -->
+    <section id="tab-portfolio" hidden>
+      <div class="grid12">
+        <div class="gl pad s5">
+          <h3 id="pfFormTitle">Add portfolio item</h3>
+          <p class="cap">Shown on the portfolio pages. Add a thumbnail and a link (YouTube, TikTok, Drive, Play Store, live site…).</p>
+          <form id="pfForm">
+            <input type="hidden" name="pid">
+            <div class="two">
+              <div><label for="pfSection">Portfolio</label>
+                <select class="field" id="pfSection" name="section"><option value="dev">App &amp; Web</option><option value="video">Video Editing</option></select></div>
+              <div><label for="pfKind">Type</label><select class="field" id="pfKind" name="kind"></select></div>
+            </div>
+            <label for="pfTitleIn">Title</label>
+            <input class="field" id="pfTitleIn" name="title" required maxlength="80">
+            <label for="pfDescIn">Short description</label>
+            <input class="field" id="pfDescIn" name="description" maxlength="140">
+            <label for="pfLinkIn">Link (optional)</label>
+            <input class="field" id="pfLinkIn" name="link" type="url" placeholder="https://…">
+            <div class="two">
+              <div><label for="pfImg">Thumbnail</label><input class="field" id="pfImg" name="image" type="file" accept="image/*"></div>
+              <div><label for="pfSort">Order (small first)</label><input class="field" id="pfSort" name="sort" type="number" value="0"></div>
+            </div>
+            <p class="hint" id="pfImgCurrent"></p>
+            <div class="btn-row">
+              <button class="btn btn-primary" type="submit">Save item</button>
+              <button class="tab" type="button" id="pfCancel" hidden>Cancel edit</button>
+            </div>
+            <div class="msg" id="pfMsg" role="status"></div>
+          </form>
+        </div>
+        <div class="gl pad s7">
+          <h3>Portfolio items</h3>
+          <p class="cap">Vertical images work best for apps and short edits, wide images for websites and long edits.</p>
+          <div id="pfList"><p class="hint">Loading…</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- REVIEWS -->
+    <section id="tab-reviews" hidden>
+      <div class="gl pad">
+        <h3>App reviews</h3>
+        <p class="cap">Remove spam or abusive comments.</p>
+        <div id="reviewList"><p class="hint">Loading…</p></div>
+      </div>
+    </section>
+
+    <!-- FEEDBACK -->
+    <section id="tab-feedback" hidden>
+      <div class="gl pad">
+        <h3>Website feedback</h3>
+        <p class="cap">Messages sent from the Feedback page.</p>
+        <div id="feedbackList"><p class="hint">Loading…</p></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
     <section id="tab-settings" hidden>
-      <div class="box">
+      <div class="gl pad">
         <h3>Site settings</h3>
-        <p class="hint">Edit contact links, numbers and text shown on the website.</p>
+        <p class="cap">Contact links, numbers, text and free-plan limits shown on the website and in the meters.</p>
         <div id="settingsFields"></div>
         <div class="btn-row"><button class="btn btn-primary" id="saveSettings" type="button">Save settings</button></div>
         <div class="msg" id="settingsMsg" role="status"></div>
       </div>
     </section>
-  </div>
-</main>
+  </main>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="assets/app.js"></script>
+<script src="assets/admin.js"></script>
 </body>
 </html>
