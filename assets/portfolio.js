@@ -17,54 +17,63 @@
     var skillBox = $("#pfSkills");
     skillBox.innerHTML = skills.map(function () { return "<div></div>"; }).join("");
     if (exp) { $("#pfExpNum").textContent = exp; }
+    if (M.vtick) $("#pfName").insertAdjacentHTML("beforeend", M.vtick());
     return { summary: summary, skills: skills, exp: exp };
   }
 
   function typedSlice(text, p) { return text.slice(0, Math.floor(Math.max(0, Math.min(1, p)) * text.length)); }
 
+  /* Plays by itself like the reference video: title draws in, photo rises, camera pushes in,
+     summary types, badge slides in, skills type with a highlight, camera pulls back. */
   function setup(d) {
     var typed = $("#pfTyped"), skillEls = $$("#pfSkills div"), expEl = $("#pfExp");
     var total = d.skills.join("").length;
-    function paint(p) {
-      typed.textContent = typedSlice(d.summary, (p - 0.36) / 0.28);
-      var shown = Math.floor(Math.max(0, Math.min(1, (p - 0.62) / 0.28)) * total), used = 0;
+    var st = { sum: 0, sk: 0 };
+    function paint() {
+      typed.textContent = typedSlice(d.summary, st.sum);
+      var shown = Math.floor(Math.max(0, Math.min(1, st.sk)) * total), used = 0;
       skillEls.forEach(function (el, i) {
         var t = d.skills[i], n = Math.max(0, Math.min(t.length, shown - used));
         el.textContent = t.slice(0, n); used += t.length;
         el.style.visibility = n > 0 ? "visible" : "hidden";
+        el.classList.toggle("typing", n > 0 && n < t.length);
       });
-      if (d.exp) expEl.hidden = p < 0.85;
     }
-    var still = !window.gsap || !window.ScrollTrigger || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var still = !window.gsap || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (still) {
-      $("#pf").style.height = "100svh";
-      $("#pfPhoto").style.transform = "translateX(-12%)";
-      $("#pfTitle").style.opacity = ".35";
-      paint(1);
+      $("#pf").classList.add("is-still");
+      st.sum = 1; st.sk = 1; paint();
+      if (d.exp) expEl.hidden = false;
+      $$("#pfTitle span").forEach(function (sp) { sp.style.backgroundSize = "100% 100%"; });
       return;
     }
-    gsap.registerPlugin(ScrollTrigger);
-    ScrollTrigger.config({ ignoreMobileResize: true });
-    var mm = gsap.matchMedia();
-    mm.add({ wide: "(min-width: 821px)", narrow: "(max-width: 820px)" }, function (ctx) {
-      var wide = ctx.conditions.wide;
-      gsap.set("#pfPhoto", { xPercent: -50 });
-      var tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: "#pf", start: "top top", end: "bottom bottom", scrub: true,
-          onUpdate: function (self) { paint(self.progress); }
-        }
-      });
-      tl.from("#pfTitle span", { yPercent: 120, opacity: 0, stagger: 0.08, duration: 1.2, ease: "power3.out" }, 0)
-        .from("#pfPhoto", { yPercent: 28, opacity: 0, duration: 1.6, ease: "power2.out" }, 0.4)
-        .to("#pfPhoto", { x: wide ? "22vw" : "26vw", scale: wide ? 0.94 : 0.84, transformOrigin: "50% 100%", duration: 2.2, ease: "power2.inOut" }, 2.6)
-        .to("#pfTitle", { opacity: 0.22, yPercent: -10, duration: 2, ease: "none" }, 2.6)
-        .from("#pfInfo", { opacity: 0, y: 40, duration: 1.4, ease: "power2.out" }, 3.2)
-        .from("#pfSkills", { opacity: 0, x: 40, duration: 1.2, ease: "power2.out" }, 5.4);
-      paint(0);
-      return function () { paint(1); };
-    });
-    paint(0);
+    var wide = window.matchMedia("(min-width: 821px)").matches;
+    var touch = window.matchMedia("(pointer: coarse)").matches;
+    gsap.set("#pfPhoto", { xPercent: -50 });
+    gsap.set("#pfTitle span", { backgroundSize: "100% 0%" });
+    gsap.set(["#pfInfo", "#pfSkills", ".pf-label"], { opacity: 0 });
+    if (d.exp) { expEl.hidden = false; gsap.set(expEl, { opacity: 0, x: 60 }); }
+    var tl = gsap.timeline({ defaults: { ease: "power2.out" }, onUpdate: paint });
+    tl.from("#pfTitle span", { opacity: 0, y: 40, stagger: 0.12, duration: 0.7 }, 0.2)
+      .to("#pfTitle span", { backgroundSize: "100% 100%", stagger: 0.1, duration: 0.9, ease: "power1.inOut" }, 1.0)
+      .to(".pf-label", { opacity: 1, duration: 0.8 }, 2.0)
+      .from("#pfPhoto", { yPercent: 35, opacity: 0, duration: 1.4, ease: "power3.out" }, 2.0)
+      /* camera push-in, name + summary */
+      .to("#pfStage", { scale: wide ? 1.3 : 1.15, x: wide ? "16vw" : "8vw", transformOrigin: "50% 70%", duration: 1.6, ease: "power2.inOut" }, 3.6)
+      .to("#pfInfo", { opacity: 1, duration: 0.8 }, 4.0)
+      .to(st, { sum: 1, duration: 3.2, ease: "none" }, 4.6)
+      /* second shot: face on the left, badge and skills on the right */
+      .to("#pfInfo", { opacity: wide ? 0.0 : 1, duration: 0.6 }, 8.0)
+      .to("#pfStage", { scale: wide ? 1.5 : 1.15, x: wide ? "-18vw" : "8vw", duration: 1.4, ease: "power2.inOut" }, 8.0);
+    if (d.exp) tl.to(expEl, { opacity: 1, x: 0, duration: 0.8 }, 9.0);
+    tl.to("#pfSkills", { opacity: 1, duration: 0.6 }, 9.2)
+      .to(st, { sk: 1, duration: 2.6, ease: "none" }, 9.4)
+      /* pull back to the full composition */
+      .to("#pfStage", { scale: 1, x: 0, duration: 1.6, ease: "power2.inOut" }, 12.4)
+      .to("#pfInfo", { opacity: 1, duration: 0.8 }, 13.0);
+    if (touch) tl.timeScale(1.15);
+    $("#pf").addEventListener("click", function () { if (tl.progress() < 1) tl.progress(1); });
+    paint();
   }
 
   /* ---------- work grids ---------- */
