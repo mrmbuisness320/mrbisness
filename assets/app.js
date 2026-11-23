@@ -46,6 +46,7 @@
     grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
     chart: '<path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/>',
     ext: '<path d="M7 17 17 7M8 7h9v9"/>',
+    bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>',
     check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
     upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',
@@ -66,6 +67,13 @@
     var five = starSvg + starSvg + starSvg + starSvg + starSvg;
     return '<span class="stars ' + (cls || "") + '" role="img" aria-label="' + v + ' out of 5"><span class="base">' + five +
       '</span><span class="fill" style="width:' + pct + '%">' + five + "</span></span>";
+  }
+  var vtickN = 0;
+  function vtick() {
+    var id = "vt" + (++vtickN);
+    return '<span class="vtick" title="Verified developer" aria-label="Verified"><svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10d9a0"/><stop offset="1" stop-color="#3b82f6"/></linearGradient></defs>' +
+      '<path fill="url(#' + id + ')" d="M12 1.6l2.7 1.9 3.3-.1 1 3.1 2.7 2-1 3.1 1 3.1-2.7 2-1 3.1-3.3-.1L12 22.4l-2.7-1.9-3.3.1-1-3.1-2.7-2 1-3.1-1-3.1 2.7-2 1-3.1 3.3.1z"/>' +
+      '<path d="m8 12.3 2.8 2.8L16.4 9.4" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
   }
   var logoN = 0;
   var logo = function () {
@@ -133,14 +141,14 @@
 
     var header =
       '<header class="header"><a class="brand" href="index.html" aria-label="MRM home">' + logo() +
-      '<span><b>MRM</b><small>App · Web · Video</small></span></a>' +
+      '<span><b>MRM' + vtick() + '</b><small>App · Web · Video</small></span></a>' +
       '<button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="drawer"><span></span><span></span><span></span></button></header>';
     var defs = '<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><clipPath id="sideClip" clipPathUnits="objectBoundingBox"><path d="' + SIDE_PATH + '"/></clipPath></defs></svg>';
     var side =
       '<div class="side-scrim" id="scrim"></div>' +
       '<aside class="side" id="drawer" aria-label="Main menu"><svg class="side-edge" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="sideStroke" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset=".5" stop-color="#c4b5fd" stop-opacity=".22"/><stop offset="1" stop-color="#d946ef" stop-opacity=".65"/></linearGradient></defs><path d="' + SIDE_PATH + '"/></svg>' +
       '<div class="side-in">' +
-      '<div class="side-head stag" style="--i:0"><a class="brand" href="index.html">' + logo() + '<span><b>MRM</b></span></a><button class="side-close" id="sideClose" type="button" aria-label="Close menu">' + ico("close") + "</button></div>" +
+      '<div class="side-head stag" style="--i:0"><a class="brand" href="index.html">' + logo() + '<span><b>MRM' + vtick() + '</b></span></a><button class="side-close" id="sideClose" type="button" aria-label="Close menu">' + ico("close") + "</button></div>" +
       '<div class="side-profile stag" style="--i:1"><img class="side-avatar" src="assets/me.webp" alt="" loading="lazy"><div><b>MRM<span class="pill-tag">PRO</span></b><small>App · Website · Video</small></div></div>' +
       '<nav class="nav-list">' + navHtml + "</nav>" +
       '<div class="side-card stag" style="--i:' + (n + 1) + '"><small>FREE APPS</small><p>Download my Android apps for free.</p><a class="btn btn-blue" href="apps.html">Browse apps</a></div>' +
@@ -621,6 +629,21 @@
     setSide(new URLSearchParams(location.search).get("mode") === "signup" ? "signup" : "signin");
   }
 
+  /* ---------- notice banner (posted from the admin panel) ---------- */
+  function initNotices() {
+    if (!sb || document.body.dataset.page === "admin" || document.body.dataset.page === "login") return;
+    sb.from("notices").select("id,title,body,urgent,created_at").eq("active", true).order("urgent", { ascending: false }).order("created_at", { ascending: false }).limit(1).then(function (r) {
+      var n = r && r.data && r.data[0]; if (!n) return;
+      var key = "mrm-notice-" + n.id;
+      try { if (sessionStorage.getItem(key)) return; } catch (e) {}
+      var bar = document.createElement("div");
+      bar.className = "notice-bar" + (n.urgent ? " urgent" : ""); bar.setAttribute("role", "status");
+      bar.innerHTML = "<div><b>" + (n.urgent ? "Important: " : "") + esc(n.title) + "</b>" + (n.body ? "<span>" + esc(n.body) + "</span>" : "") + '</div><button type="button" aria-label="Dismiss">×</button>';
+      bar.querySelector("button").addEventListener("click", function () { try { sessionStorage.setItem(key, "1"); } catch (e) {} bar.remove(); });
+      document.body.appendChild(bar);
+    });
+  }
+
   /* ---------- email confirmed page ---------- */
   function initVerified() {
     var box = $("#vBox");
@@ -641,7 +664,7 @@
   /* ---------- shared with admin.js / portfolio.js ---------- */
   window.MRM = {
     C: C, sb: sb, configured: configured, $: $, $$: $$, esc: esc, safeUrl: safeUrl, ico: ico, logo: logo,
-    starsHTML: starsHTML, getSettings: getSettings, getSession: getSession, initReveal: initReveal, track: track
+    starsHTML: starsHTML, vtick: vtick, getSettings: getSettings, getSession: getSession, initReveal: initReveal, track: track
   };
 
   /* ---------- boot ---------- */
@@ -657,6 +680,7 @@
   if (page === "home") initHero();
   if (page === "edit" || page === "dev") getSettings().then(function (s) { renderContacts(page, s); });
   if (page === "verified") initVerified();
+  initNotices();
   if (page === "about") getSettings().then(initAbout);
   initSession();
   if (page === "apps") initApps();
