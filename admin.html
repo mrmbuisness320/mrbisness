@@ -28,15 +28,17 @@
     <button type="button" data-tab="portfolio" data-ico="image">Portfolio</button>
     <button type="button" data-tab="reviews" data-ico="star">Reviews</button>
     <button type="button" data-tab="feedback" data-ico="chat">Feedback</button>
+    <button type="button" data-tab="notices" data-ico="bell">Notices</button>
+    <button type="button" data-tab="users" data-ico="users" data-dev>Users</button>
     <span class="sp"></span>
-    <button type="button" data-tab="settings" data-ico="gear">Settings</button>
+    <button type="button" data-tab="settings" data-ico="gear" data-dev>Settings</button>
   </nav>
 
   <main class="dash-main">
     <div class="dash-top">
       <div>
         <h1 id="greet">Welcome back</h1>
-        <p class="who" id="who"></p>
+        <p class="who"><span class="role-pill" id="rolePill"></span> <span id="who"></span></p>
       </div>
       <div class="acts">
         <a class="tab" href="index.html">View site</a>
@@ -182,6 +184,53 @@
         <h3>Website feedback</h3>
         <p class="cap">Messages sent from the Feedback page.</p>
         <div id="feedbackList"><p class="hint">Loading…</p></div>
+      </div>
+    </section>
+
+    <!-- NOTICES -->
+    <section id="tab-notices" hidden>
+      <div class="grid12">
+        <div class="gl pad s5">
+          <h3>Post a notice</h3>
+          <p class="cap">Shown as a banner at the top of the website. Mark it urgent to highlight it.</p>
+          <form id="noticeForm">
+            <label for="nTitle">Title</label>
+            <input class="field" id="nTitle" required maxlength="120">
+            <label for="nBody">Details (optional)</label>
+            <textarea class="field" id="nBody" maxlength="1000"></textarea>
+            <label class="chk"><input type="checkbox" id="nUrgent"> Urgent notice</label>
+            <div class="btn-row"><button class="btn btn-primary" type="submit">Publish notice</button></div>
+            <div class="msg" id="nMsg" role="status"></div>
+          </form>
+        </div>
+        <div class="gl pad s7">
+          <h3>Notices</h3>
+          <p class="cap">Hide or delete old notices.</p>
+          <div id="noticeList"><p class="hint">Loading…</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- USERS (developer) -->
+    <section id="tab-users" hidden>
+      <div class="grid12">
+        <div class="gl pad s8">
+          <h3>Accounts</h3>
+          <p class="cap" id="usersCap">Everyone who created an account on the website.</p>
+          <input class="field" id="userSearch" placeholder="Search email…" type="search">
+          <div id="userList"><p class="hint">Loading…</p></div>
+        </div>
+        <div class="gl pad s4">
+          <h3>Admins</h3>
+          <p class="cap">Admins can upload apps, post notices and moderate reviews. Only you can change settings or add admins.</p>
+          <form id="staffForm">
+            <label for="staffEmail">Add admin by email</label>
+            <input class="field" id="staffEmail" type="email" required placeholder="name@example.com">
+            <div class="btn-row"><button class="btn btn-primary" type="submit">Make admin</button></div>
+            <div class="msg" id="staffMsg" role="status"></div>
+          </form>
+          <div id="staffList" style="margin-top:14px"></div>
+        </div>
       </div>
     </section>
 
