@@ -496,8 +496,10 @@
       wrap.innerHTML = '<form id="fbForm"><label>How do you like the website? (optional)</label><div class="star-input" id="fbStars">' +
         [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" data-s="' + n + '" aria-label="' + n + ' star' + (n > 1 ? "s" : "") + '">' + starSvg + "</button>"; }).join("") +
         '</div><label for="fbText">Your message</label><textarea class="field" id="fbText" maxlength="1000" required placeholder="Tell me what you like, what is confusing, or what I should add"></textarea>' +
+        '<label for="fbImg">Screenshot (optional)</label><input type="file" id="fbImg" accept="image/*">' +
         '<button class="btn btn-primary" type="submit" style="margin-top:18px">Send feedback</button><div class="msg" id="fbMsg" role="status"></div></form>';
-      var form = $("#fbForm"), msg = $("#fbMsg");
+      var form = $("#fbForm"), msg = $("#fbMsg"), fbDz = null;
+      (function mount(n) { if (window.MRM && MRM.dropzone) fbDz = MRM.dropzone($("#fbImg"), { title: "Screenshot (optional)", hint: "Tap or drop an image, up to 2 MB", maxMB: 2 }); else if (n < 30) setTimeout(function () { mount(n + 1); }, 100); })(0);
       $("#fbStars").addEventListener("click", function (e) {
         var b = e.target.closest("button"); if (!b) return;
         picked = picked === Number(b.dataset.s) ? 0 : Number(b.dataset.s);
@@ -507,7 +509,17 @@
         e.preventDefault();
         var btn = form.querySelector("button[type=submit]");
         btn.disabled = true; msg.className = "msg";
-        sb.from("feedback").insert({ site_rating: picked || null, message: $("#fbText").value.trim() }).then(function (r) {
+        var file = $("#fbImg").files[0], path = null;
+        if (file) {
+          var ex = (/\.(png|jpe?g|webp|gif)$/i.exec(file.name) || [".png"])[0].toLowerCase();
+          path = s.user.id + "/" + Date.now() + "-" + Math.random().toString(36).slice(2, 7) + ex;
+          if (fbDz) fbDz.busy();
+        }
+        Promise.resolve(file ? sb.storage.from("feedback-files").upload(path, file, { contentType: file.type || "image/png" }) : { error: null }).then(function (up) {
+          if (up.error) { if (fbDz) fbDz.fail(); return { error: up.error }; }
+          if (fbDz) fbDz.done();
+          return sb.from("feedback").insert({ site_rating: picked || null, message: $("#fbText").value.trim(), image_path: path });
+        }).then(function (r) {
           if (r.error) { msg.textContent = r.error.message; msg.className = "msg err"; btn.disabled = false; return; }
           wrap.innerHTML = '<div class="note" style="margin-top:0">Thank you! Your feedback was sent.</div>';
         });

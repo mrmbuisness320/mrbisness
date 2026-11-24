@@ -4,7 +4,8 @@
   if (!M) return;
   var $ = M.$, $$ = M.$$, esc = M.esc, safeUrl = M.safeUrl, ico = M.ico, sb = M.sb, C = M.C;
   var APK_BUCKET = C.apkBucket || "app-apks";
-  var settings = {};
+  var settings = {}, ROLE = "none", MYMAIL = "";
+  function session_email() { return MYMAIL; }
 
   function show(el, t, ok) { if (!el) return; el.textContent = t; el.className = "msg " + (ok ? "ok" : "err"); }
   function fmt(b) {
@@ -24,12 +25,18 @@
   }
   M.getSession().then(function (session) {
     if (!session) { location.replace("login.html?next=admin.html"); return; }
-    sb.rpc("is_admin").then(function (a) {
-      if (a.error || a.data !== true) {
+    sb.rpc("my_role").then(function (a) {
+      var role = a.error ? null : a.data;
+      if (a.error) return sb.rpc("is_admin").then(function (b) { return b.data === true ? "developer" : "none"; });
+      return role;
+    }).then(function (role) {
+      if (role !== "developer" && role !== "admin") {
         gate.innerHTML = '<div class="empty">This area is for the site owner only.<br><br><a class="btn btn-primary" href="index.html">Back to home</a></div>';
         return;
       }
-      $("#who").textContent = "Signed in as " + session.user.email;
+      ROLE = role; MYMAIL = session.user.email;
+      $("#who").textContent = session.user.email;
+      var rp = $("#rolePill"); rp.textContent = role === "developer" ? "Developer" : "Admin"; rp.className = "role-pill " + role;
       gate.hidden = true; ui.hidden = false;
       start();
     });
@@ -38,19 +45,27 @@
   function start() {
     var h = new Date().getHours();
     $("#greet").textContent = (h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening") + ", " + ((settings.owner_name || (C.defaults || {}).owner_name) || "MRM");
+    if (ROLE === "developer") $("#greet").insertAdjacentHTML("beforeend", M.vtick());
     $("#railLogo").innerHTML = M.logo();
     $$("[data-i]").forEach(function (e) { e.innerHTML = ico(e.dataset.i); });
     $$("#rail button[data-ico]").forEach(function (b) { b.innerHTML = ico(b.dataset.ico) + "<span>" + esc(b.textContent) + "</span>"; });
 
+    if (ROLE !== "developer") $$("[data-dev]").forEach(function (b) { b.remove(); });
+    var iconDz = M.dropzone ? M.dropzone($("#icon"), { title: "App icon", hint: "PNG or JPG. Tap or drop an image", maxMB: 5 }) : null;
+    var apkDz = M.dropzone ? M.dropzone($("#apk"), { title: "APK file", hint: "Tap or drop the APK (up to 50 MB)", maxMB: 50 }) : null;
+    var pfDz = M.dropzone ? M.dropzone($("#pfImg"), { title: "Thumbnail", hint: "Tap or drop an image", maxMB: 5 }) : null;
+    function dz(c, m) { if (c) c[m](); }
     var current = "overview";
     $("#rail").addEventListener("click", function (e) {
       var b = e.target.closest("button[data-tab]"); if (!b) return;
       current = b.dataset.tab;
       $$("#rail button").forEach(function (x) { x.classList.toggle("active", x === b); });
-      ["overview", "apps", "portfolio", "reviews", "feedback", "settings"].forEach(function (t) { $("#tab-" + t).hidden = t !== current; });
+      ["overview", "apps", "portfolio", "reviews", "feedback", "notices", "users", "settings"].forEach(function (t) { $("#tab-" + t).hidden = t !== current; });
       if (current === "overview") loadStats();
       if (current === "reviews") loadReviews();
       if (current === "feedback") loadFeedback();
+      if (current === "notices") loadNotices();
+      if (current === "users") loadUsers();
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
     $("#logout").addEventListener("click", function () { sb.auth.signOut().then(function () { location.replace("login.html"); }); });
@@ -192,6 +207,7 @@
       if (sec.external_url && !safeUrl(sec.external_url)) { show(msg, "The external link must start with https://", false); done(); return; }
       var row = { name: $("#appname").value.trim(), version: $("#version").value.trim(), description: $("#description").value.trim(), icon_url: editing ? editing.icon_url : null };
       var replaced = null;
+      if (iconFile) dz(iconDz, "busy"); if (apkFile) dz(apkDz, "busy");
       Promise.resolve().then(function () { return iconFile ? upload(C.storageBucket, iconFile, "icons").then(publicUrl) : row.icon_url; })
         .then(function (u) { row.icon_url = u; return apkFile ? upload(APK_BUCKET, apkFile, "apk") : sec.apk_path; })
         .then(function (p) {
@@ -207,9 +223,10 @@
         .then(function (r) {
           if (r.error) throw r.error;
           if (replaced) sb.storage.from(APK_BUCKET).remove([replaced]);
+          dz(iconDz, "done"); dz(apkDz, "done");
           show(msg, editing ? "App updated." : "App published!", true); resetApp(); loadApps(); loadStats();
         })
-        .catch(function (err) { show(msg, "Error: " + (err.message || err), false); })
+        .catch(function (err) { dz(iconDz, "fail"); dz(apkDz, "fail"); show(msg, "Error: " + (err.message || err), false); })
         .then(done);
     });
 
@@ -271,6 +288,7 @@
       var file = $("#pfImg").files[0];
       var row = { section: $("#pfSection").value, kind: $("#pfKind").value, title: $("#pfTitleIn").value.trim(), description: $("#pfDescIn").value.trim() || null, link_url: link || null, sort: parseInt($("#pfSort").value, 10) || 0, image_url: pfEditing ? pfEditing.image_url : null };
       var oldImg = null;
+      if (file) dz(pfDz, "busy");
       Promise.resolve().then(function () {
         if (!file) return row.image_url;
         if (pfEditing) oldImg = publicPath(pfEditing.image_url);
@@ -281,8 +299,9 @@
       }).then(function (r) {
         if (r.error) throw r.error;
         if (oldImg) sb.storage.from(C.storageBucket).remove([oldImg]);
+        dz(pfDz, "done");
         show(pfMsg, pfEditing ? "Item updated." : "Item added.", true); resetPf(); loadPortfolio();
-      }).catch(function (err) { show(pfMsg, "Error: " + (err.message || err), false); }).then(done);
+      }).catch(function (err) { dz(pfDz, "fail"); show(pfMsg, "Error: " + (err.message || err), false); }).then(done);
     });
 
     /* ---------- reviews & feedback moderation ---------- */
@@ -311,13 +330,22 @@
         var rows = r.data || [];
         box.innerHTML = rows.length ? rows.map(function (f) {
           return '<div class="dl-row"><div class="grow"><small>' + esc(f.email || f.author || "User") + " · " + when(f.created_at) + "</small>" + (f.site_rating ? "<div>" + M.starsHTML(f.site_rating) + "</div>" : "") +
-            "<p>" + esc(f.message) + '</p></div><button class="mini danger" type="button" data-fdel="' + esc(f.id) + '">Delete</button></div>';
+            "<p>" + esc(f.message) + "</p>" + (f.image_path ? '<a class="fb-shot" target="_blank" rel="noopener" data-shot="' + esc(f.image_path) + '">Loading image…</a>' : "") +
+            '</div><button class="mini danger" type="button" data-fdel="' + esc(f.id) + '">Delete</button></div>';
         }).join("") : '<p class="hint">No feedback yet.</p>';
+        $$("[data-shot]", box).forEach(function (a) {
+          sb.storage.from("feedback-files").createSignedUrl(a.dataset.shot, 3600).then(function (u) {
+            var url = u && u.data && u.data.signedUrl;
+            if (url) { a.href = url; a.innerHTML = '<img alt="Attached screenshot" src="' + esc(url) + '">'; } else a.textContent = "Image unavailable";
+          });
+        });
       });
     }
     $("#feedbackList").addEventListener("click", function (e) {
       var b = e.target.closest("[data-fdel]"); if (!b || !confirm("Delete this message?")) return;
+      var shot = b.closest(".dl-row").querySelector("[data-shot]");
       sb.from("feedback").delete().eq("id", b.dataset.fdel).then(function (r) {
+        if (!r.error && shot) sb.storage.from("feedback-files").remove([shot.dataset.shot]);
         if (r.error) alert("Could not delete: " + r.error.message); else { loadFeedback(); loadStats(); }
       });
     });
@@ -352,6 +380,78 @@
         rows.forEach(function (x) { settings[x.key] = x.value; });
         show($("#settingsMsg"), "Settings saved. Reload the public pages to see them.", true); loadStats();
       });
+    });
+
+    /* ---------- notices ---------- */
+    function loadNotices() {
+      var box = $("#noticeList");
+      sb.from("notices").select("*").order("created_at", { ascending: false }).limit(100).then(function (r) {
+        if (r.error) { box.innerHTML = '<p class="hint">Could not load: ' + esc(r.error.message) + " (run upgrade-v3.sql)</p>"; return; }
+        var rows = r.data || [];
+        box.innerHTML = rows.length ? rows.map(function (n) {
+          return '<div class="dl-row"><div class="grow"><small>' + (n.urgent ? "URGENT · " : "") + when(n.created_at) + (n.active ? "" : " · hidden") + "</small><b>" + esc(n.title) + "</b>" +
+            (n.body ? "<p>" + esc(n.body) + "</p>" : "") + '</div><button class="mini" type="button" data-ntoggle="' + esc(n.id) + '" data-on="' + (n.active ? 1 : 0) + '">' + (n.active ? "Hide" : "Show") +
+            '</button><button class="mini danger" type="button" data-ndel="' + esc(n.id) + '">Delete</button></div>';
+        }).join("") : '<p class="hint">No notices yet.</p>';
+      });
+    }
+    $("#noticeList").addEventListener("click", function (e) {
+      var t = e.target.closest("[data-ntoggle]"), d = e.target.closest("[data-ndel]");
+      if (t) sb.from("notices").update({ active: t.dataset.on !== "1" }).eq("id", t.dataset.ntoggle).then(loadNotices);
+      if (d && confirm("Delete this notice?")) sb.from("notices").delete().eq("id", d.dataset.ndel).then(loadNotices);
+    });
+    $("#noticeForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var btn = e.target.querySelector("button[type=submit]"); btn.disabled = true;
+      sb.from("notices").insert({ title: $("#nTitle").value.trim(), body: $("#nBody").value.trim() || null, urgent: $("#nUrgent").checked, author: ROLE }).then(function (r) {
+        btn.disabled = false;
+        if (r.error) { show($("#nMsg"), "Could not publish: " + r.error.message, false); return; }
+        e.target.reset(); show($("#nMsg"), "Notice published.", true); loadNotices();
+      });
+    });
+
+    /* ---------- users + admins (developer only) ---------- */
+    var users = [];
+    function drawUsers() {
+      var q = ($("#userSearch").value || "").toLowerCase();
+      var list = users.filter(function (u) { return (u.email || "").toLowerCase().indexOf(q) > -1; });
+      $("#usersCap").textContent = users.length + " account" + (users.length === 1 ? "" : "s") + " · " + users.filter(function (u) { return u.verified; }).length + " verified";
+      $("#userList").innerHTML = list.length ? list.map(function (u) {
+        return '<div class="dl-row"><div class="grow"><b>' + esc(u.email) + "</b><small>Joined " + when(u.created_at) + (u.last_sign_in_at ? " · last seen " + when(u.last_sign_in_at) : "") + "</small></div>" +
+          '<span class="pill ' + (u.verified ? "ok" : "warn") + '">' + (u.verified ? "Verified" : "Not verified") + "</span>" +
+          (u.staff ? '<span class="pill adm">Admin</span><button class="mini danger" type="button" data-unstaff="' + esc(u.email) + '">Remove admin</button>' :
+            '<button class="mini" type="button" data-mkstaff="' + esc(u.email) + '">Make admin</button>') + "</div>";
+      }).join("") : '<p class="hint">No accounts found.</p>';
+    }
+    function loadUsers() {
+      if (ROLE !== "developer") return;
+      sb.rpc("admin_users").then(function (r) {
+        if (r.error) { $("#userList").innerHTML = '<p class="hint">Could not load: ' + esc(r.error.message) + " (run upgrade-v3.sql)</p>"; return; }
+        users = r.data || []; drawUsers();
+      });
+      sb.from("staff").select("*").order("created_at").then(function (r) {
+        var rows = (r && r.data) || [];
+        $("#staffList").innerHTML = rows.length ? "<h4>Current admins</h4>" + rows.map(function (x) { return '<div class="kv"><span>' + esc(x.email) + "</span><span>" + when(x.created_at) + "</span></div>"; }).join("") : '<p class="hint">No extra admins yet.</p>';
+      });
+    }
+    function setStaff(email, on, msgEl) {
+      var q = on ? sb.from("staff").upsert({ email: email.toLowerCase() }, { onConflict: "email" }) : sb.from("staff").delete().eq("email", email.toLowerCase());
+      return q.then(function (r) {
+        if (r.error) { show(msgEl || $("#staffMsg"), r.error.message, false); return; }
+        show($("#staffMsg"), on ? email + " is now an admin." : "Admin removed.", true); loadUsers();
+      });
+    }
+    $("#userSearch").addEventListener("input", drawUsers);
+    $("#userList").addEventListener("click", function (e) {
+      var a = e.target.closest("[data-mkstaff]"), b = e.target.closest("[data-unstaff]");
+      if (a && confirm("Make " + a.dataset.mkstaff + " an admin?")) setStaff(a.dataset.mkstaff, true);
+      if (b && confirm("Remove admin rights from " + b.dataset.unstaff + "?")) setStaff(b.dataset.unstaff, false);
+    });
+    $("#staffForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var em = $("#staffEmail").value.trim();
+      if (em.toLowerCase() === String(session_email()).toLowerCase()) { show($("#staffMsg"), "You are already the developer.", false); return; }
+      setStaff(em, true).then(function () { $("#staffEmail").value = ""; });
     });
 
     /* start everything once all variables above exist */
