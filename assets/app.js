@@ -588,6 +588,13 @@
 
     getSession().then(function (s) { if (s) goAfter(); });
 
+    $("#forgotBtn").addEventListener("click", function () {
+      var em = lform.email.value.trim();
+      if (!em) { show("Type your email above first, then tap Forgot password.", false); lform.email.focus(); return; }
+      sb.auth.resetPasswordForEmail(em, { redirectTo: new URL("reset.html", location.href).href }).then(function (r) {
+        if (r.error) show(r.error.message, false); else show("If that email has an account, a reset link is on its way.", true);
+      });
+    });
     lform.addEventListener("submit", function (e) {
       e.preventDefault();
       var btn = lform.querySelector("button[type=submit]");
@@ -641,6 +648,29 @@
     setSide(new URLSearchParams(location.search).get("mode") === "signup" ? "signup" : "signin");
   }
 
+  /* ---------- reset password page ---------- */
+  function initReset() {
+    var box = $("#vBox");
+    function form() {
+      box.innerHTML = '<div class="v-ic ok">' + ico("check") + '</div><h1>New password</h1><p>Choose a new password for your account.</p>' +
+        '<form id="rpForm"><input class="field" type="password" name="pw" minlength="6" required placeholder="New password (6+ characters)" autocomplete="new-password">' +
+        '<button class="btn btn-primary block" type="submit" style="margin-top:14px">Save password</button><div class="msg" id="rpMsg" role="status"></div></form>';
+      $("#rpForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        sb.auth.updateUser({ password: e.target.pw.value }).then(function (r) {
+          var m = $("#rpMsg");
+          if (r.error) { m.textContent = r.error.message; m.className = "msg err"; return; }
+          box.innerHTML = '<div class="v-ic ok">' + ico("check") + '</div><h1>Password updated</h1><p>You are signed in.</p><div class="btn-row" style="justify-content:center"><a class="btn btn-primary" href="apps.html">Browse apps</a></div>';
+        });
+      });
+    }
+    function bad() { box.innerHTML = '<div class="v-ic bad">!</div><h1>Link expired</h1><p>Request a new reset link from the login page.</p><div class="btn-row" style="justify-content:center"><a class="btn btn-primary" href="login.html">Back to login</a></div>'; }
+    if (!sb) { bad(); return; }
+    var done = false;
+    sb.auth.onAuthStateChange(function (ev) { if (ev === "PASSWORD_RECOVERY" && !done) { done = true; form(); } });
+    setTimeout(function () { if (!done) getSession().then(function (s) { if (s && !done) { done = true; form(); } else if (!done) bad(); }); }, 1500);
+  }
+
   /* ---------- notice banner (posted from the admin panel) ---------- */
   function initNotices() {
     if (!sb || document.body.dataset.page === "admin" || document.body.dataset.page === "login") return;
@@ -692,6 +722,7 @@
   if (page === "home") initHero();
   if (page === "edit" || page === "dev") getSettings().then(function (s) { renderContacts(page, s); });
   if (page === "verified") initVerified();
+  if (page === "reset") initReset();
   initNotices();
   if (page === "about") getSettings().then(initAbout);
   initSession();

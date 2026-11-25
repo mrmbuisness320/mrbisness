@@ -46,7 +46,7 @@
     var h = new Date().getHours();
     $("#greet").textContent = (h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening") + ", " + ((settings.owner_name || (C.defaults || {}).owner_name) || "MRM");
     if (ROLE === "developer") $("#greet").insertAdjacentHTML("beforeend", M.vtick());
-    $("#railLogo").innerHTML = M.logo();
+    $("#railLogo").innerHTML = M.logo(); $("#barLogo").innerHTML = M.logo();
     $$("[data-i]").forEach(function (e) { e.innerHTML = ico(e.dataset.i); });
     $$("#rail button[data-ico]").forEach(function (b) { b.innerHTML = ico(b.dataset.ico) + "<span>" + esc(b.textContent) + "</span>"; });
 
@@ -55,6 +55,8 @@
     var apkDz = M.dropzone ? M.dropzone($("#apk"), { title: "APK file", hint: "Tap or drop the APK (up to 50 MB)", maxMB: 50 }) : null;
     var pfDz = M.dropzone ? M.dropzone($("#pfImg"), { title: "Thumbnail", hint: "Tap or drop an image", maxMB: 5 }) : null;
     function dz(c, m) { if (c) c[m](); }
+    setInterval(function () { var l = $("#liveNum"), t = $("#tUsers"); if (l) $("#barLive").textContent = l.textContent + " live now"; if (t && t.textContent !== "–") $("#barAcc").textContent = t.textContent + " accounts"; }, 1500);
+    $("#barName").textContent = "Welcome, " + (settings.owner_name || (C.defaults || {}).owner_name || "MRM");
     var current = "overview";
     $("#rail").addEventListener("click", function (e) {
       var b = e.target.closest("button[data-tab]"); if (!b) return;
@@ -415,14 +417,61 @@
     function drawUsers() {
       var q = ($("#userSearch").value || "").toLowerCase();
       var list = users.filter(function (u) { return (u.email || "").toLowerCase().indexOf(q) > -1; });
-      $("#usersCap").textContent = users.length + " account" + (users.length === 1 ? "" : "s") + " · " + users.filter(function (u) { return u.verified; }).length + " verified";
+      $("#usersCap").textContent = users.length + " account" + (users.length === 1 ? "" : "s") + " · " + users.filter(function (u) { return u.verified; }).length + " verified · tap one to see details and fix problems";
       $("#userList").innerHTML = list.length ? list.map(function (u) {
-        return '<div class="dl-row"><div class="grow"><b>' + esc(u.email) + "</b><small>Joined " + when(u.created_at) + (u.last_sign_in_at ? " · last seen " + when(u.last_sign_in_at) : "") + "</small></div>" +
-          '<span class="pill ' + (u.verified ? "ok" : "warn") + '">' + (u.verified ? "Verified" : "Not verified") + "</span>" +
-          (u.staff ? '<span class="pill adm">Admin</span><button class="mini danger" type="button" data-unstaff="' + esc(u.email) + '">Remove admin</button>' :
-            '<button class="mini" type="button" data-mkstaff="' + esc(u.email) + '">Make admin</button>') + "</div>";
+        return '<button type="button" class="dl-row urow" data-uid="' + esc(u.id) + '"><span class="av">' + esc((u.email || "?").charAt(0).toUpperCase()) + '</span><span class="grow"><b>' + esc(u.email) + "</b><small>Joined " + when(u.created_at) + (u.last_sign_in_at ? " · last seen " + when(u.last_sign_in_at) : " · never signed in") + "</small></span>" +
+          (u.banned ? '<span class="pill bad">Blocked</span>' : "") + (u.staff ? '<span class="pill adm">Admin</span>' : "") +
+          '<span class="pill ' + (u.verified ? "ok" : "warn") + '">' + (u.verified ? "Verified" : "Not verified") + "</span></button>";
       }).join("") : '<p class="hint">No accounts found.</p>';
     }
+    /* ----- account details + fix tools ----- */
+    var drawer = $("#userDrawer");
+    function closeDrawer() { drawer.hidden = true; document.body.classList.remove("no-scroll"); }
+    function act(u, name, okText) {
+      return sb.rpc("admin_user_action", { uid: u.id, act: name }).then(function (r) {
+        if (r.error) { show($("#duMsg"), r.error.message, false); return false; }
+        show($("#duMsg"), okText, true); return true;
+      });
+    }
+    function openUser(u) {
+      function row(k, v) { return '<div class="kv"><span>' + k + "</span><span>" + v + "</span></div>"; }
+      var self = u.is_developer;
+      drawer.innerHTML = '<div class="du-card gl"><button type="button" class="du-x" aria-label="Close">×</button>' +
+        '<div class="du-head"><span class="av big">' + esc((u.email || "?").charAt(0).toUpperCase()) + '</span><div><h3>' + esc(u.email) + "</h3><small>" +
+        (self ? "Developer (you)" : u.staff ? "Admin" : "Member") + (u.banned ? " · Blocked" : "") + "</small></div></div>" +
+        row("Email status", u.verified ? "Verified" + (u.verified_at ? " · " + when(u.verified_at) : "") : "Not verified") +
+        row("Joined", when(u.created_at)) + row("Last sign-in", u.last_sign_in_at ? when(u.last_sign_in_at) : "Never") +
+        row("Sign-in method", esc(u.provider || "email")) + row("App reviews", u.ratings || 0) + row("Feedback sent", u.feedback || 0) +
+        row("Account ID", '<code class="idc">' + esc(u.id) + "</code>") +
+        (self ? '<p class="hint">This is your own account.</p>' :
+        '<h4>Fix problems</h4><div class="du-acts">' +
+        (u.verified ? "" : '<button class="mini" data-a="confirm">Mark email as verified</button><button class="mini" data-a="resend">Resend confirmation link</button>') +
+        '<button class="mini" data-a="reset">Send password reset link</button>' +
+        '<button class="mini" data-a="' + (u.banned ? "unban" : "ban") + '">' + (u.banned ? "Unblock account" : "Block account") + "</button>" +
+        '<button class="mini" data-a="' + (u.staff ? "unstaff" : "mkstaff") + '">' + (u.staff ? "Remove admin" : "Make admin") + "</button>" +
+        '<button class="mini danger" data-a="clear_content">Delete their reviews &amp; feedback</button>' +
+        '<button class="mini danger" data-a="delete">Delete account</button></div>') +
+        '<div class="msg" id="duMsg" role="status"></div></div>';
+      drawer.hidden = false; document.body.classList.add("no-scroll");
+      drawer.querySelector(".du-x").addEventListener("click", closeDrawer);
+      drawer.addEventListener("click", function (e) { if (e.target === drawer) closeDrawer(); }, { once: true });
+      drawer.querySelector(".du-card").addEventListener("click", function (e) {
+        var b = e.target.closest("[data-a]"); if (!b) return;
+        var a = b.dataset.a, p;
+        if (a === "delete" && !confirm("Permanently delete " + u.email + "? This cannot be undone.")) return;
+        if (a === "clear_content" && !confirm("Delete all reviews and feedback from " + u.email + "?")) return;
+        if (a === "ban" && !confirm("Block " + u.email + "? They will not be able to sign in.")) return;
+        if (a === "resend") p = sb.auth.resend({ type: "signup", email: u.email, options: { emailRedirectTo: new URL("verified.html", location.href).href } }).then(function (r) { show($("#duMsg"), r.error ? r.error.message : "Confirmation link sent.", !r.error); return false; });
+        else if (a === "reset") p = sb.auth.resetPasswordForEmail(u.email, { redirectTo: new URL("reset.html", location.href).href }).then(function (r) { show($("#duMsg"), r.error ? r.error.message : "Password reset link sent to " + u.email, !r.error); return false; });
+        else if (a === "mkstaff" || a === "unstaff") p = setStaff(u.email, a === "mkstaff", $("#duMsg")).then(function () { return true; });
+        else p = act(u, a, { confirm: "Email marked as verified.", ban: "Account blocked.", unban: "Account unblocked.", clear_content: "Reviews and feedback removed.", delete: "Account deleted." }[a]);
+        p.then(function (changed) { if (!changed) return; if (a === "delete") { closeDrawer(); } loadUsers(); });
+      });
+    }
+    $("#userList").addEventListener("click", function (e) {
+      var r = e.target.closest("[data-uid]"); if (!r) return;
+      var u = users.filter(function (x) { return x.id === r.dataset.uid; })[0]; if (u) openUser(u);
+    });
     function loadUsers() {
       if (ROLE !== "developer") return;
       sb.rpc("admin_users").then(function (r) {
@@ -442,11 +491,6 @@
       });
     }
     $("#userSearch").addEventListener("input", drawUsers);
-    $("#userList").addEventListener("click", function (e) {
-      var a = e.target.closest("[data-mkstaff]"), b = e.target.closest("[data-unstaff]");
-      if (a && confirm("Make " + a.dataset.mkstaff + " an admin?")) setStaff(a.dataset.mkstaff, true);
-      if (b && confirm("Remove admin rights from " + b.dataset.unstaff + "?")) setStaff(b.dataset.unstaff, false);
-    });
     $("#staffForm").addEventListener("submit", function (e) {
       e.preventDefault();
       var em = $("#staffEmail").value.trim();
