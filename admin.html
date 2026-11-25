@@ -35,14 +35,18 @@
   </nav>
 
   <main class="dash-main">
+    <div class="dash-bar">
+      <div class="bar-pill gl"><span class="logo-sm" id="barLogo"></span><b id="barName">Welcome</b></div>
+      <div class="bar-pill gl bar-mid"><span class="live-dot"></span><span id="barLive">0 live now</span><i class="sepd"></i><span id="barAcc">– accounts</span></div>
+      <div class="acts">
+        <a class="tab" href="index.html">View site</a>
+        <button class="tab" id="logout" type="button">Log out</button>
+      </div>
+    </div>
     <div class="dash-top">
       <div>
         <h1 id="greet">Welcome back</h1>
         <p class="who"><span class="role-pill" id="rolePill"></span> <span id="who"></span></p>
-      </div>
-      <div class="acts">
-        <a class="tab" href="index.html">View site</a>
-        <button class="tab" id="logout" type="button">Log out</button>
       </div>
     </div>
 
@@ -246,6 +250,7 @@
     </section>
   </main>
 </div>
+<div class="du-back" id="userDrawer" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="assets/app.js"></script>

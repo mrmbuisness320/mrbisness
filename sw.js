@@ -1,11 +1,11 @@
 /* MRM service worker: makes the site installable and usable offline.
    Bump CACHE when you change files so visitors get the new version. */
-var CACHE = "mrm-v8";
+var CACHE = "mrm-v9";
 var CORE = [
   "./", "index.html", "video-editing.html", "development.html", "apps.html", "about.html",
   "terms.html", "privacy.html", "login.html", "admin.html", "feedback.html",
   "portfolio-dev.html", "portfolio-video.html", "config.js",
-  "assets/style.css", "assets/app.js", "assets/admin.js", "assets/dropzone.js", "verified.html", "assets/portfolio.js", "verified.html",
+  "assets/style.css", "assets/app.js", "assets/admin.js", "assets/dropzone.js", "verified.html", "reset.html", "assets/portfolio.js", "verified.html",
   "assets/logo.svg", "assets/me.webp",
   "assets/icon-192.png", "assets/icon-512.png", "manifest.webmanifest"
 ];
