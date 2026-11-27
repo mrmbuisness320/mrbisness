@@ -51,22 +51,25 @@
     $$("#rail button[data-ico]").forEach(function (b) { b.innerHTML = ico(b.dataset.ico) + "<span>" + esc(b.textContent) + "</span>"; });
 
     if (ROLE !== "developer") $$("[data-dev]").forEach(function (b) { b.remove(); });
+    if (ROLE === "developer") $$("[data-adm]").forEach(function (b) { b.remove(); });
     var iconDz = M.dropzone ? M.dropzone($("#icon"), { title: "App icon", hint: "PNG or JPG. Tap or drop an image", maxMB: 5 }) : null;
     var apkDz = M.dropzone ? M.dropzone($("#apk"), { title: "APK file", hint: "Tap or drop the APK (up to 50 MB)", maxMB: 50 }) : null;
     var pfDz = M.dropzone ? M.dropzone($("#pfImg"), { title: "Thumbnail", hint: "Tap or drop an image", maxMB: 5 }) : null;
     function dz(c, m) { if (c) c[m](); }
-    setInterval(function () { var l = $("#liveNum"), t = $("#tUsers"); if (l) $("#barLive").textContent = l.textContent + " live now"; if (t && t.textContent !== "–") $("#barAcc").textContent = t.textContent + " accounts"; }, 1500);
+    setInterval(function () { var l = $("#liveNum"), t = $("#tUsers"); if (l) $("#barLive").textContent = l.textContent + " live now"; if (t && $("#barAcc") && t.textContent !== "–") $("#barAcc").textContent = t.textContent + " accounts"; }, 1500);
     $("#barName").textContent = "Welcome, " + (settings.owner_name || (C.defaults || {}).owner_name || "MRM");
+    if (ROLE !== "developer") { var ba = $("#barAcc"); if (ba) { ba.previousElementSibling.remove(); ba.remove(); } }
     var current = "overview";
     $("#rail").addEventListener("click", function (e) {
       var b = e.target.closest("button[data-tab]"); if (!b) return;
       current = b.dataset.tab;
       $$("#rail button").forEach(function (x) { x.classList.toggle("active", x === b); });
-      ["overview", "apps", "portfolio", "reviews", "feedback", "notices", "users", "settings"].forEach(function (t) { $("#tab-" + t).hidden = t !== current; });
+      ["overview", "apps", "portfolio", "reviews", "feedback", "reports", "notices", "text", "users", "settings"].forEach(function (t) { $("#tab-" + t).hidden = t !== current; });
       if (current === "overview") loadStats();
       if (current === "reviews") loadReviews();
       if (current === "feedback") loadFeedback();
       if (current === "notices") loadNotices();
+      if (current === "reports") loadReports();
       if (current === "users") loadUsers();
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
@@ -120,7 +123,7 @@
         gauge($("#gaugeFiles"), s.storage_bytes / limF * 100, "File storage", fmt(s.storage_bytes) + " of " + fmt(limF) + " · " + fmt(Math.max(0, limF - s.storage_bytes)) + " free");
         gauge($("#gaugeDb"), s.db_bytes / limD * 100, "Database", fmt(s.db_bytes) + " of " + fmt(limD) + " · " + fmt(Math.max(0, limD - s.db_bytes)) + " free");
         $("#kvApk").textContent = fmt(s.apk_bytes); $("#kvIcons").textContent = fmt(s.icon_bytes); $("#kvDb").textContent = fmt(s.db_bytes);
-        $("#tApps").textContent = s.apps; $("#tUsers").textContent = s.accounts; $("#tRatings").textContent = s.ratings; $("#tFeedback").textContent = s.feedback;
+        $("#tApps").textContent = s.apps; if ($("#tUsers")) $("#tUsers").textContent = s.accounts; $("#tRatings").textContent = s.ratings; $("#tFeedback").textContent = s.feedback;
       });
       sb.from("app_ratings").select("stars").then(function (r) {
         var c = [0, 0, 0, 0, 0, 0], rows = (r && r.data) || [];
@@ -267,7 +270,7 @@
         var it = pfItems.filter(function (x) { return String(x.id) === ed.dataset.pedit; })[0]; if (!it) return;
         pfEditing = it; pf.elements.pid.value = it.id;
         $("#pfSection").value = it.section; fillKinds(it.kind);
-        $("#pfTitleIn").value = it.title || ""; $("#pfDescIn").value = it.description || ""; $("#pfLinkIn").value = it.link_url || ""; $("#pfSort").value = it.sort || 0;
+        $("#pfTitleIn").value = it.title || ""; $("#pfDescIn").value = it.description || ""; $("#pfLinkIn").value = it.link_url || ""; $("#pfTagsIn").value = it.tags || ""; $("#pfSort").value = it.sort || 0;
         $("#pfImgCurrent").textContent = it.image_url ? "A thumbnail is already set. Choose a new image only to replace it." : "";
         $("#pfFormTitle").textContent = "Edit: " + it.title; $("#pfCancel").hidden = false;
         pf.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -289,6 +292,7 @@
       if (link && !safeUrl(link)) { show(pfMsg, "The link must start with https://", false); done(); return; }
       var file = $("#pfImg").files[0];
       var row = { section: $("#pfSection").value, kind: $("#pfKind").value, title: $("#pfTitleIn").value.trim(), description: $("#pfDescIn").value.trim() || null, link_url: link || null, sort: parseInt($("#pfSort").value, 10) || 0, image_url: pfEditing ? pfEditing.image_url : null };
+      var tg = $("#pfTagsIn").value.trim(); if (tg || (pfEditing && pfEditing.tags)) row.tags = tg || null;
       var oldImg = null;
       if (file) dz(pfDz, "busy");
       Promise.resolve().then(function () {
@@ -498,9 +502,58 @@
       setStaff(em, true).then(function () { $("#staffEmail").value = ""; });
     });
 
+    /* ---------- problem reports ---------- */
+    var CAT = { bug: "Website problem", login: "Login / account", download: "App download", other: "Other" };
+    function maskMail(e) { e = String(e || ""); var i = e.indexOf("@"); return i < 2 ? "user" : e.slice(0, 2) + "•••" + e.slice(i); }
+    function loadReports() {
+      var box = $("#reportList");
+      sb.from("reports").select("*").order("created_at", { ascending: false }).limit(200).then(function (r) {
+        if (r.error) { box.innerHTML = '<p class="hint">Could not load: ' + esc(r.error.message) + " (run upgrade-v6.sql)</p>"; return; }
+        var rows = r.data || [];
+        var fresh = rows.filter(function (x) { return x.status === "new"; }).length;
+        var tb = $('#rail [data-tab="reports"]'); if (tb) tb.setAttribute("data-badge", fresh ? String(fresh) : "");
+        box.innerHTML = rows.length ? rows.map(function (x) {
+          return '<div class="rep" data-id="' + esc(x.id) + '"><div class="rep-top"><span class="pill ' + (x.status === "fixed" ? "ok" : x.status === "needs_dev" ? "bad" : "warn") + '">' + (x.status === "fixed" ? "Fixed" : x.status === "needs_dev" ? "Needs developer" : "New") + "</span>" +
+            '<b>' + esc(CAT[x.category] || x.category) + "</b><small>" + esc(ROLE === "developer" ? x.email : maskMail(x.email)) + " · " + when(x.created_at) + (x.page ? " · from " + esc(x.page) : "") + "</small></div>" +
+            "<p>" + esc(x.message) + "</p>" + (x.image_path ? '<a class="fb-shot" target="_blank" rel="noopener" data-shot="' + esc(x.image_path) + '">Loading image…</a>' : "") +
+            '<input class="field rep-note" placeholder="Note (what you found, what to fix)" maxlength="500" value="' + esc(x.note || "") + '">' +
+            '<div class="du-acts"><button class="mini" data-st="new">New</button><button class="mini" data-st="needs_dev">Needs developer</button><button class="mini" data-st="fixed">Fixed</button><button class="mini" data-savenote>Save note</button>' +
+            (ROLE === "developer" ? '<button class="mini danger" data-rdel>Delete</button>' : "") + "</div></div>";
+        }).join("") : '<p class="hint">No reports yet.</p>';
+        $$("[data-shot]", box).forEach(function (a) {
+          sb.storage.from("feedback-files").createSignedUrl(a.dataset.shot, 3600).then(function (u) {
+            var url = u && u.data && u.data.signedUrl;
+            if (url) { a.href = url; a.innerHTML = '<img alt="Attached screenshot" src="' + esc(url) + '">'; } else a.textContent = "Image unavailable";
+          });
+        });
+      });
+    }
+    $("#reportList").addEventListener("click", function (e) {
+      var card = e.target.closest(".rep"); if (!card) return;
+      var id = card.dataset.id, st = e.target.closest("[data-st]"), sn = e.target.closest("[data-savenote]"), del = e.target.closest("[data-rdel]");
+      if (st) sb.from("reports").update({ status: st.dataset.st, note: card.querySelector(".rep-note").value.trim() || null }).eq("id", id).then(loadReports);
+      if (sn) sb.from("reports").update({ note: card.querySelector(".rep-note").value.trim() || null }).eq("id", id).then(function (r) { sn.textContent = r.error ? "Failed" : "Saved"; setTimeout(function () { sn.textContent = "Save note"; }, 1200); });
+      if (del && confirm("Delete this report?")) {
+        var shot = card.querySelector("[data-shot]");
+        sb.from("reports").delete().eq("id", id).then(function (r) { if (!r.error && shot) sb.storage.from("feedback-files").remove([shot.dataset.shot]); loadReports(); });
+      }
+    });
+
+    /* ---------- basic site text (admins) ---------- */
+    $("#txTagline").value = settings.tagline || (C.defaults || {}).tagline || "";
+    $("#txAbout").value = settings.about_text || (C.defaults || {}).about_text || "";
+    $("#saveText").addEventListener("click", function () {
+      var rows = [{ key: "tagline", value: $("#txTagline").value.trim() }, { key: "about_text", value: $("#txAbout").value.trim() }];
+      sb.from("site_settings").upsert(rows, { onConflict: "key" }).then(function (r) {
+        if (r.error) { show($("#textMsg"), "Save failed: " + r.error.message, false); return; }
+        show($("#textMsg"), "Saved. Reload the public pages to see it.", true);
+      });
+    });
+
     /* start everything once all variables above exist */
     startPresence();
     loadApps();
     loadPortfolio();
+    loadReports();
   }
 })();
